@@ -3,13 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    app:startDestination="@id/nav_home">
+    app:startDestination="@id/nav_sobre">
 
-    <fragment
-        android:id="@+id/nav_home"
-        android:name="com.example.menssageapp.HomeFragment"
-        android:label="fragment_home"
-        tools:layout="@layout/fragment_home" />
     <fragment
         android:id="@+id/nav_historico"
         android:name="com.example.menssageapp.HistoricoFragment"
@@ -25,4 +20,9 @@
         android:name="com.example.menssageapp.AjudaFragment"
         android:label="fragment_ajuda"
         tools:layout="@layout/fragment_ajuda" />
+    <activity
+        android:id="@+id/mainActivity"
+        android:name="com.example.menssageapp.MainActivity"
+        android:label="activity_main"
+        tools:layout="@layout/activity_main" />
 </navigation>

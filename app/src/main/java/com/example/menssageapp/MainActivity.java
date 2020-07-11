@@ -42,9 +42,9 @@ public class MainActivity extends AppCompatActivity {
     ImageButton btnEnviarWhats;
     ListView listView;
     MultiAutoCompleteTextView editMensagem;
-    ImageView menu;
-    NavigationView navigationView;
+    ImageView imageMenu;
     DrawerLayout drawerLayout;
+    NavigationView navigationView;
     NavController navController;
 
     // POSSÍVEL MÁSCARA
@@ -64,11 +64,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // MENU
-        drawerLayout = findViewById(R.id.drawer_layout);
-        menu = findViewById(R.id.imageMenu);
+        drawerLayout = findViewById(R.id.drawerLayout);
+        imageMenu = findViewById(R.id.imageMenu);
         navigationView = findViewById(R.id.navigationView);
 
-        menu.setOnClickListener(new View.OnClickListener() {
+        imageMenu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 drawerLayout.openDrawer(GravityCompat.START);
@@ -77,11 +77,13 @@ public class MainActivity extends AppCompatActivity {
 
         navigationView.setItemIconTintList(null);
 
+        /*
         navController = Navigation.findNavController(this, R.id.navHostFragment);
         NavigationUI.setupWithNavController(navigationView,navController);
+
+         */
         // FIM MENU
 
-        /*
         btnEnviarSMS = findViewById(R.id.btnEnviarSMS);
         btnEnviarWhats = findViewById(R.id.btnEnviarWhats);
         listView = findViewById(R.id.listView);
@@ -180,16 +182,12 @@ public class MainActivity extends AppCompatActivity {
         adapter = new ContatoAdapter(this,listaContatos);
         listView.setAdapter(adapter);
 
-         */
     }
 
 
 
     // ------------------------- FUNÇÕES -------------------------
-    /*
     public void enviarSMS(){
-
-        ArrayList<String> listaTelefones = new ArrayList<>();
 
         if(editMensagem.getText().toString().equals("") || listaContatos.isEmpty()){
             Toast.makeText(this,"Adicione um contato ou digite uma mensagem. Tente novamente.",Toast.LENGTH_SHORT).show();
@@ -197,7 +195,6 @@ public class MainActivity extends AppCompatActivity {
             for(int i=0; i<listaContatos.size(); i++){
                 SmsManager smsManager = SmsManager.getDefault();
                 smsManager.sendTextMessage(listaContatos.get(i).getTelefone(), null, editMensagem.getText().toString(), null, null);
-                //listaTelefones.add(listaContatos.get(i).getTelefone()+" ");
             }
             Toast.makeText(this, "SMS enviado!", Toast.LENGTH_SHORT).show();
         }else{
@@ -289,8 +286,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
-     */
-
-
 }
