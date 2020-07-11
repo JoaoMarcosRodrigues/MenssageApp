@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".HomeFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="15dp">
+
+        <ImageButton
+            android:id="@+id/imageAdicionarContato"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/ic_adicionar_contato"
+            android:layout_above="@+id/listView"/>
+
+        <TextView
+            android:id="@+id/view_lista"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:gravity="center"
+            android:text="Contatos"
+            android:layout_marginTop="15dp"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <ListView
+            android:id="@+id/listView"
+            android:layout_width="match_parent"
+            android:layout_height="400dp"
+            android:padding="12dp"
+            android:layout_above="@+id/mensagem"
+            android:layout_below="@+id/view_lista"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="15dp"
+            android:choiceMode="multipleChoice"
+            android:saveEnabled="true"
+            android:background="@drawable/listview_border"/>
+
+        <MultiAutoCompleteTextView
+            android:id="@+id/mensagem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Digite aqui sua mensagem..."
+            android:textSize="18sp"
+            android:layout_marginBottom="15dp"
+            android:layout_above="@+id/btnEnviarSMS" />
+
+
+        <ImageButton
+            android:id="@+id/btnEnviarSMS"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="50dp"
+            android:layout_marginLeft="50dp"
+            android:layout_marginBottom="6dp"
+            android:layout_toEndOf="@+id/view_whatsapp"
+            android:layout_toRightOf="@+id/view_whatsapp"
+            android:src="@android:drawable/ic_dialog_email"
+            android:text="SMS" />
+
+        <TextView
+            android:id="@+id/view_sms"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginBottom="20dp"
+            android:layout_toRightOf="@+id/btnEnviarSMS"
+            android:text="SMS" />
+
+        <ImageButton
+            android:id="@+id/btnEnviarWhats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="40dp"
+            android:layout_marginBottom="6dp"
+            android:src="@android:drawable/ic_dialog_email"
+            android:text="Whatsapp" />
+
+        <TextView
+            android:id="@+id/view_whatsapp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginBottom="23dp"
+            android:layout_toRightOf="@+id/btnEnviarWhats"
+            android:text="Whatsapp" />
+
+    </RelativeLayout>
+
+</FrameLayout>
