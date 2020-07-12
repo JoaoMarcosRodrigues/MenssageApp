@@ -14,10 +14,10 @@ import androidx.appcompat.app.AppCompatDialogFragment;
 import java.util.ArrayList;
 
 public class Dialog extends AppCompatDialogFragment {
-    MainActivity main = new MainActivity();
-    ArrayList<Contato> lista = main.listaContatos;
-    ListView listView = main.listView;
-    ArrayAdapter<Contato> adapter = main.adapter;
+    Home home = new Home();
+    ArrayList<Contato> lista = home.listaContatos;
+    ListView listView = home.listView;
+    ArrayAdapter<Contato> adapter = home.adapter;
 
     @NonNull
     @Override

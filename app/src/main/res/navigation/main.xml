@@ -3,26 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    app:startDestination="@id/nav_sobre">
-
+    app:startDestination="@id/nav_home">
+    <activity
+        android:id="@+id/nav_home"
+        android:name="com.example.menssageapp.Home"
+        android:label="Home"
+        tools:layout="@layout/activity_home"/>
     <fragment
         android:id="@+id/nav_historico"
         android:name="com.example.menssageapp.HistoricoFragment"
-        android:label="fragment_historico"
+        android:label="Historico"
         tools:layout="@layout/fragment_historico" />
     <fragment
         android:id="@+id/nav_sobre"
         android:name="com.example.menssageapp.SobreFragment"
-        android:label="fragment_sobre"
+        android:label="Sobre"
         tools:layout="@layout/fragment_sobre" />
     <fragment
         android:id="@+id/nav_ajuda"
         android:name="com.example.menssageapp.AjudaFragment"
-        android:label="fragment_ajuda"
+        android:label="Ajuda"
         tools:layout="@layout/fragment_ajuda" />
-    <activity
-        android:id="@+id/mainActivity"
-        android:name="com.example.menssageapp.MainActivity"
-        android:label="activity_main"
-        tools:layout="@layout/activity_main" />
 </navigation>
