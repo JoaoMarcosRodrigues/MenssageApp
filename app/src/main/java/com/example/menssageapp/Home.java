@@ -8,14 +8,19 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.Settings;
 import android.telephony.SmsManager;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -26,23 +31,34 @@ import android.widget.Toast;
 
 import com.github.rtoshiro.util.format.SimpleMaskFormatter;
 import com.github.rtoshiro.util.format.text.MaskTextWatcher;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.wafflecopter.multicontactpicker.ContactResult;
+import com.wafflecopter.multicontactpicker.LimitColumn;
+import com.wafflecopter.multicontactpicker.MultiContactPicker;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Home extends AppCompatActivity {
 
+    private static final int CONTACT_PICKER_REQUEST = 202;
     ImageButton imageBtnSelecionarContato;
     ImageButton btnEnviarSMS;
     ImageButton btnEnviarWhats;
     ListView listView;
     MultiAutoCompleteTextView editMensagem;
-    Toolbar toolbar;
 
     // POSSÍVEL MÁSCARA
     MaskTextWatcher mtw;
     SimpleMaskFormatter smf;
 
     ArrayList<Contato> listaContatos = new ArrayList<Contato>();
+    List<ContactResult> results = new ArrayList<>();
 
     ArrayAdapter<Contato> adapter;
 
@@ -60,9 +76,17 @@ public class Home extends AppCompatActivity {
         editMensagem = findViewById(R.id.mensagem);
         imageBtnSelecionarContato = findViewById(R.id.imageAdicionarContato);
 
+
         // Checando permissão para enviar SMS
         if(!checarPermissaoSMS(Manifest.permission.SEND_SMS)){
             ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.SEND_SMS},SEND_SMS_PERMISSION_REQUEST_CODE);
+        }
+
+        // Checando permissão de acessibilidade
+        if(!isAccessibilityOn(getApplicationContext())){
+            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         }
 
         // Adicionando máscara no campo Telefone
@@ -70,6 +94,15 @@ public class Home extends AppCompatActivity {
         //mtw = new MaskTextWatcher(editTelefone,smf);
         //editTelefone.addTextChangedListener(mtw);
         // FIM MÁSCARA
+
+        Dexter.withContext(this)
+                .withPermissions(
+                        Manifest.permission.SEND_SMS,
+                        Manifest.permission.READ_CONTACTS
+                ).withListener(new MultiplePermissionsListener() {
+            @Override public void onPermissionsChecked(MultiplePermissionsReport report) {/* ... */}
+            @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
+        }).check();
 
         // Função para enviar o SMS
         btnEnviarSMS.setOnClickListener(new View.OnClickListener() {
@@ -144,7 +177,22 @@ public class Home extends AppCompatActivity {
         imageBtnSelecionarContato.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                selecionarContato();
+                //selecionarContato();
+                new MultiContactPicker.Builder(Home.this) //Activity/fragment context
+                        .hideScrollbar(false) //Optional - default: false
+                        .showTrack(true) //Optional - default: true
+                        .searchIconColor(Color.WHITE) //Option - default: White
+                        .setChoiceMode(MultiContactPicker.CHOICE_MODE_MULTIPLE) //Optional - default: CHOICE_MODE_MULTIPLE
+                        .handleColor(ContextCompat.getColor(Home.this, R.color.colorPrimary)) //Optional - default: Azure Blue
+                        .bubbleColor(ContextCompat.getColor(Home.this, R.color.colorPrimary)) //Optional - default: Azure Blue
+                        .bubbleTextColor(Color.WHITE) //Optional - default: White
+                        .setTitleText("Select Contacts") //Optional - default: Select Contacts
+                        .setLoadingType(MultiContactPicker.LOAD_ASYNC) //Optional - default LOAD_ASYNC (wait till all loaded vs stream results)
+                        .limitToColumn(LimitColumn.NONE) //Optional - default NONE (Include phone + email, limiting to one can improve loading time)
+                        .setActivityAnimations(android.R.anim.fade_in, android.R.anim.fade_out,
+                                android.R.anim.fade_in,
+                                android.R.anim.fade_out) //Optional - default: No animation overrides
+                        .showPickerForResult(CONTACT_PICKER_REQUEST);
             }
         });
 
@@ -154,6 +202,32 @@ public class Home extends AppCompatActivity {
     }
 
     // ------------------------- FUNÇÕES -------------------------
+    private boolean isAccessibilityOn(Context context) {
+        int accessibilityEnabled = 0;
+        final String service = context.getPackageName () + "/" + WhatsAppAccessibilityService.class.getCanonicalName ();
+        try {
+            accessibilityEnabled = Settings.Secure.getInt (context.getApplicationContext ().getContentResolver (), Settings.Secure.ACCESSIBILITY_ENABLED);
+        } catch (Settings.SettingNotFoundException ignored) {  }
+
+        TextUtils.SimpleStringSplitter colonSplitter = new TextUtils.SimpleStringSplitter (':');
+
+        if (accessibilityEnabled == 1) {
+            String settingValue = Settings.Secure.getString (context.getApplicationContext ().getContentResolver (), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (settingValue != null) {
+                colonSplitter.setString (settingValue);
+                while (colonSplitter.hasNext ()) {
+                    String accessibilityService = colonSplitter.next ();
+
+                    if (accessibilityService.equalsIgnoreCase (service)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     public void enviarSMS(){
 
         if(editMensagem.getText().toString().equals("") || listaContatos.isEmpty()){
@@ -172,22 +246,32 @@ public class Home extends AppCompatActivity {
     public void enviarWhats(){
         // Verificar se o aplicativo do whatsapp está instalado
         boolean instalado = appInstalado("com.whatsapp");
+        String mensagem = editMensagem.getText().toString();
 
-        if(listaContatos.isEmpty() || editMensagem.getText().toString().equals("")){
-            Toast.makeText(this,"Adicione um contato à lista ou digite uma mensagem!",Toast.LENGTH_SHORT).show();
-        }
-        else if(instalado){
-            for(int i=0; i<listaContatos.size(); i++){
-                String numero = listaContatos.get(i).getTelefone();
-                String mensagem = editMensagem.getText().toString();
-
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse("http://api.whatsapp.com/send?phone="+numero+"&text="+mensagem));
-                startActivity(intent);
+        try{
+            PackageManager packageManager = getApplicationContext().getPackageManager();
+            if(listaContatos.isEmpty() || editMensagem.getText().toString().equals("")){
+                Toast.makeText(this,"Adicione um contato à lista ou digite uma mensagem!",Toast.LENGTH_SHORT).show();
             }
-
-        }else{
-            Toast.makeText(this, "Whatsapp não instalado no seu dispositivo.", Toast.LENGTH_SHORT).show();
+            else if(instalado){
+                for(int i=0; i<listaContatos.size(); i++){
+                    String numero = listaContatos.get(i).getTelefone();
+                    String url = "https://api.whatsapp.com/send?phone=" + numero + "&text=" + URLEncoder.encode(mensagem, "UTF-8");
+                    Intent whatsappIntent = new Intent(Intent.ACTION_VIEW);
+                    whatsappIntent.setPackage("com.whatsapp");
+                    whatsappIntent.setData(Uri.parse(url));
+                    whatsappIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getApplicationContext().startService(whatsappIntent);
+                    if(whatsappIntent.resolveActivity(packageManager)!=null) {
+                        startActivity(whatsappIntent);
+                        Thread.sleep(10000);
+                    }
+                }
+            }else{
+                Toast.makeText(this, "Whatsapp não instalado no seu dispositivo.", Toast.LENGTH_SHORT).show();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -216,6 +300,8 @@ public class Home extends AppCompatActivity {
         startActivityForResult(selecionarContatoItem,PICK_CONTATO_REQUEST);
     }
 
+    // onActivityResult antigo
+    /*
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -250,6 +336,37 @@ public class Home extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
 
                 }
+            }
+        }
+    }
+     */
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CONTACT_PICKER_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                results = MultiContactPicker.obtainResult(data);
+                List<String> nomes = new ArrayList<>();
+                List<String> numeros = new ArrayList<>();
+                try{
+                    for(int i=0; i<results.size(); i++) {
+                        nomes.add(results.get(i).getDisplayName());
+                        numeros.add(results.get(i).getPhoneNumbers().get(0).getNumber());
+                        //Contato contato = new Contato();
+                        Contato contato = new Contato("Pedro", "(79) 88888-8888", R.drawable.ic_pessoa);
+                        contato.setNome(nomes.get(i));
+                        contato.setTelefone(numeros.get(i));
+                        contato.setImagem(R.drawable.ic_pessoa);
+                        listaContatos.add(contato);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+                adapter.notifyDataSetChanged();
+            } else if (resultCode == RESULT_CANCELED) {
+                System.out.println("User closed the picker without selecting items.");
             }
         }
     }
