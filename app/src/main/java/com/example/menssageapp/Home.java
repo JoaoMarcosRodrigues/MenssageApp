@@ -50,6 +50,7 @@ public class Home extends AppCompatActivity {
     ImageButton imageBtnSelecionarContato;
     ImageButton btnEnviarSMS;
     ImageButton btnEnviarWhats;
+    ImageButton btnEnviarFacebook;
     ListView listView;
     MultiAutoCompleteTextView editMensagem;
 
@@ -63,7 +64,6 @@ public class Home extends AppCompatActivity {
     ArrayAdapter<Contato> adapter;
 
     final int SEND_SMS_PERMISSION_REQUEST_CODE = 1;
-    static final int PICK_CONTATO_REQUEST = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +72,7 @@ public class Home extends AppCompatActivity {
 
         btnEnviarSMS = findViewById(R.id.btnEnviarSMS);
         btnEnviarWhats = findViewById(R.id.btnEnviarWhats);
+        btnEnviarFacebook = findViewById(R.id.btnEnviarFacebook);
         listView = findViewById(R.id.listView);
         editMensagem = findViewById(R.id.mensagem);
         imageBtnSelecionarContato = findViewById(R.id.imageAdicionarContato);
@@ -112,11 +113,19 @@ public class Home extends AppCompatActivity {
             }
         });
 
-        // Função para enviar o SMS
+        // Função para enviar o Whatsapp
         btnEnviarWhats.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 enviarWhats();
+            }
+        });
+
+        // Função para enviar mensagem pelo Facebook
+        btnEnviarFacebook.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                enviarFacebook();
             }
         });
 
@@ -201,6 +210,8 @@ public class Home extends AppCompatActivity {
         listView.setAdapter(adapter);
     }
 
+
+
     // ------------------------- FUNÇÕES -------------------------
     private boolean isAccessibilityOn(Context context) {
         int accessibilityEnabled = 0;
@@ -228,6 +239,10 @@ public class Home extends AppCompatActivity {
         return false;
     }
 
+    private void enviarFacebook() {
+
+    }
+
     public void enviarSMS(){
 
         if(editMensagem.getText().toString().equals("") || listaContatos.isEmpty()){
@@ -244,6 +259,9 @@ public class Home extends AppCompatActivity {
     }
 
     public void enviarWhats(){
+        MySMSservice.startActionWHATSAPP(getApplicationContext(),editMensagem.getText().toString(),
+                results);
+        /*
         // Verificar se o aplicativo do whatsapp está instalado
         boolean instalado = appInstalado("com.whatsapp");
         String mensagem = editMensagem.getText().toString();
@@ -273,6 +291,8 @@ public class Home extends AppCompatActivity {
         }catch (Exception e){
             e.printStackTrace();
         }
+
+         */
     }
 
     // Verificar se o aplicativo do whatsapp está instalado
@@ -291,13 +311,6 @@ public class Home extends AppCompatActivity {
     public boolean checarPermissaoSMS(String permissao){
         int check = ContextCompat.checkSelfPermission(this,permissao);
         return (check == PackageManager.PERMISSION_GRANTED);
-    }
-
-    // PEGANDO UM CONTATO DA LISTA DE TELEFONE DO CELULAR
-    private void selecionarContato() {
-        Intent selecionarContatoItem = new Intent(Intent.ACTION_PICK, Uri.parse("content://contatos"));
-        selecionarContatoItem.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
-        startActivityForResult(selecionarContatoItem,PICK_CONTATO_REQUEST);
     }
 
     // onActivityResult antigo

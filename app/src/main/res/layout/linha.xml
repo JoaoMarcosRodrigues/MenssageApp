@@ -4,17 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:layout_margin="20dp">
+    android:layout_margin="10dp">
 
     <ImageView
         android:id="@+id/imagem"
-        android:layout_width="75dp"
-        android:layout_height="82dp"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
         android:src="@drawable/ic_pessoa" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="70dp"
         android:orientation="vertical"
         android:id="@+id/layout_principal">
 
@@ -24,30 +24,32 @@
             android:layout_height="wrap_content"
             android:text="Nome"
             android:layout_marginLeft="15dp"
-            android:textSize="20sp"
+            android:layout_marginTop="8dp"
+            android:textSize="18sp"
             android:textStyle="bold"/>
-
-        <TextView
-            android:id="@+id/telefone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="15dp"
-            android:text="Telefone"
-            android:layout_marginTop="3dp"
-            android:textSize="15sp"/>
 
         <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
 
-            <ImageView
-                android:id="@+id/btnExcluirContato"
+            <TextView
+                android:id="@+id/telefone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="15dp"
+                android:text="Telefone"
+                android:layout_marginTop="6dp"
+                android:textSize="13sp"/>
+
+            <ImageView
+                android:id="@+id/btnExcluirContato"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:layout_alignParentRight="true"
                 android:src="@android:drawable/ic_menu_delete" />
         </RelativeLayout>
 
     </LinearLayout>
+
 
 </LinearLayout>
