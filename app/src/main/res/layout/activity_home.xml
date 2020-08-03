@@ -27,8 +27,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@+id/imageAgendar"
-                android:layout_alignParentLeft="true"
-                android:layout_above="@+id/listView"
                 android:layout_marginLeft="5dp"
                 android:layout_marginTop="10dp"
                 android:text="Hora"/>
@@ -37,6 +35,8 @@
                 android:id="@+id/imageAgendar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_above="@+id/listView"
                 android:src="@drawable/ic_hora"/>
 
             <TextView

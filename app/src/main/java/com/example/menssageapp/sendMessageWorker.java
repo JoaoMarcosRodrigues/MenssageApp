@@ -23,29 +23,26 @@ public class sendMessageWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        String count = getInputData().getString("count");
         String message = getInputData().getString("message");
         String[] numbers = getInputData().getStringArray("contacts");
 
         try {
             if(numbers.length!=0) {
                 for(int j=0;j<numbers.length;j++) {
-                    for (int i = 0; i < Integer.parseInt(count); i++) {
-                        PackageManager packageManager = Objects.requireNonNull(getApplicationContext()).getPackageManager();
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        try {
-                            String url = "https://api.whatsapp.com/send?phone=" + numbers[j] + "&text=" + URLEncoder.encode(message + "   ", "UTF-8");
-                            intent.setPackage("com.whatsapp");
-                            intent.setData(Uri.parse(url));
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            if (intent.resolveActivity(packageManager) != null) {
-                                getApplicationContext().startActivity(intent);
-                                //Thread.sleep(5000);
-                            }else{
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                    PackageManager packageManager = Objects.requireNonNull(getApplicationContext()).getPackageManager();
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    try {
+                        String url = "https://api.whatsapp.com/send?phone=" + numbers[j] + "&text=" + URLEncoder.encode(message + "   ", "UTF-8");
+                        intent.setPackage("com.whatsapp");
+                        intent.setData(Uri.parse(url));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        if (intent.resolveActivity(packageManager) != null) {
+                            getApplicationContext().startActivity(intent);
+                            //Thread.sleep(5000);
+                        }else{
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }

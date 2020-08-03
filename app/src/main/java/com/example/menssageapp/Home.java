@@ -526,7 +526,7 @@ public class Home extends AppCompatActivity {
 
                 adapter.notifyDataSetChanged();
             } else if (resultCode == RESULT_CANCELED) {
-                System.out.println("User closed the picker without selecting items.");
+                System.out.println("Usuário fechou lista sem selecionar nenhum contato.");
             }
         }
     }
