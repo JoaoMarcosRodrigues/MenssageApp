@@ -12,6 +12,8 @@ import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
 import android.Manifest;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -29,10 +31,12 @@ import android.provider.Settings;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
@@ -76,10 +80,11 @@ public class Home extends AppCompatActivity {
 
     private static final int CONTACT_PICKER_REQUEST = 202;
     TextView txtHora;
+    TextView viewLimpar;
     ImageButton imageBtnSelecionarContato;
     ImageButton btnEnviarSMS;
     ImageButton btnEnviarWhats;
-    ImageButton btnEnviarFacebook;
+    //ImageButton btnEnviarFacebook;
     ImageButton btnHora;
     ListView listView;
     MultiAutoCompleteTextView editMensagem;
@@ -88,14 +93,9 @@ public class Home extends AppCompatActivity {
     private int min=100;
     private int sec=100;
     private int days=1;
-
-    private static final String CLIENT_ID = "FREE_TRIAL_ACCOUNT";
-    private static final String CLIENT_SECRET = "PUBLIC_SECRET";
-    private static final String WA_GATEWAY_URL = "https://api.whatsapp/send?phone=";
-
-    // POSSÍVEL MÁSCARA
-    MaskTextWatcher mtw;
-    SimpleMaskFormatter smf;
+    private int dia=1;
+    private int mes=1;
+    private int ano=1;
 
     ArrayList<Contato> listaContatos = new ArrayList<Contato>();
     List<ContactResult> results = new ArrayList<>();
@@ -105,14 +105,23 @@ public class Home extends AppCompatActivity {
     final int SEND_SMS_PERMISSION_REQUEST_CODE = 1;
 
     @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if(ev.getAction() == MotionEvent.ACTION_MOVE){
+            listView.dispatchTouchEvent(ev);
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        viewLimpar = findViewById(R.id.viewLimparLista);
         txtHora = findViewById(R.id.viewHora);
         btnEnviarSMS = findViewById(R.id.btnEnviarSMS);
         btnEnviarWhats = findViewById(R.id.btnEnviarWhats);
-        btnEnviarFacebook = findViewById(R.id.btnEnviarFacebook);
+        //btnEnviarFacebook = findViewById(R.id.btnEnviarFacebook);
         btnHora = findViewById(R.id.imageAgendar);
         listView = findViewById(R.id.listView);
         editMensagem = findViewById(R.id.mensagem);
@@ -146,24 +155,47 @@ public class Home extends AppCompatActivity {
             @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
         }).check();
 
+
+        viewLimpar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                listaContatos.clear();
+                adapter.notifyDataSetChanged();
+            }
+        });
+
         btnHora.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final Calendar calendar = Calendar.getInstance();
-                android.app.TimePickerDialog.OnTimeSetListener timeSetListener = new android.app.TimePickerDialog.OnTimeSetListener() {
+                DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {
                     @Override
-                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                        calendar.set(Calendar.HOUR_OF_DAY,hourOfDay);
-                        calendar.set(Calendar.MINUTE,minute);
+                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                        calendar.set(Calendar.YEAR,year);
+                        calendar.set(Calendar.MONTH,month);
+                        calendar.set(Calendar.DAY_OF_MONTH,dayOfMonth);
 
-                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH-mm");
-                        txtHora.setText(simpleDateFormat.format(calendar.getTime()));
-                        hr = hourOfDay;
-                        min = minute;
+                        dia = dayOfMonth;
+                        mes = month;
+                        ano = year;
+
+                        TimePickerDialog.OnTimeSetListener timeSetListener = new TimePickerDialog.OnTimeSetListener() {
+                            @Override
+                            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                                calendar.set(Calendar.HOUR_OF_DAY,hourOfDay);
+                                calendar.set(Calendar.MINUTE,minute);
+
+                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy - HH:mm");
+                                txtHora.setText(simpleDateFormat.format(calendar.getTime()));
+                                hr = hourOfDay;
+                                min = minute;
+                            }
+                        };
+                        new TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),false).show();
                     }
                 };
 
-                new android.app.TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),false).show();
+                new DatePickerDialog(Home.this,dateSetListener,calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH)).show();
             }
         });
 
@@ -183,6 +215,7 @@ public class Home extends AppCompatActivity {
             }
         });
 
+        /*
         // Função para enviar mensagem pelo Facebook
         btnEnviarFacebook.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -190,6 +223,7 @@ public class Home extends AppCompatActivity {
                 enviarFacebook();
             }
         });
+         */
 
         // Função para excluir um contato na lista ao pressionar
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -272,58 +306,6 @@ public class Home extends AppCompatActivity {
         listView.setAdapter(adapter);
     }
 
-    /*
-    public class Connection extends AsyncTask<Void, Void, Void>{
-        String message = editMensagem.getText().toString();
-        String number = listaContatos.get(0).getTelefone();
-        @Override
-        protected Void doInBackground(Void... voids) {
-            try {
-
-                // TODO: Should have used a 3rd party library to make a JSON string from an object
-                String jsonPayload = new StringBuilder()
-                        .append("{")
-                        .append("\"number\":\"")
-                        .append(number)
-                        .append("\",")
-                        .append("\"message\":\"")
-                        .append(message)
-                        .append("\",")
-                        .append("}")
-                        .toString();
-
-                URL url = new URL(WA_GATEWAY_URL+number+"&text="+message);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setDoOutput(true);
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("X-WM-CLIENT-ID", CLIENT_ID);
-                conn.setRequestProperty("X-WM-CLIENT-SECRET", CLIENT_SECRET);
-                conn.setRequestProperty("Content-Type", "application/json");
-
-                OutputStream os = conn.getOutputStream();
-                os.write(jsonPayload.getBytes());
-                os.flush();
-                os.close();
-
-                int statusCode = conn.getResponseCode();
-                System.out.println("Response from WA Gateway: \n");
-                System.out.println("Status Code: " + statusCode);
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                        (statusCode == 200) ? conn.getInputStream() : conn.getErrorStream()
-                ));
-                String output;
-                while ((output = br.readLine()) != null) {
-                    System.out.println(output);
-                }
-                conn.disconnect();
-            }catch (IOException e){
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-     */
-
     // ------------------------- FUNÇÕES -------------------------
     private boolean isAccessibilityOn(Context context) {
         int accessibilityEnabled = 0;
@@ -352,6 +334,7 @@ public class Home extends AppCompatActivity {
     }
 
     // CORRIGIR - NÃO ESTÁ FUNCIONANDO
+    /*
     private void enviarFacebook() {
         String mensagem = editMensagem.getText().toString();
         int app_id = R.string.facebook_app_id;
@@ -398,8 +381,9 @@ public class Home extends AppCompatActivity {
 
         MessageDialog.show(Home, genericTemplateContent);
 
-         */
+
     }
+     */
 
     // OK
     public void enviarSMS(){
@@ -414,22 +398,22 @@ public class Home extends AppCompatActivity {
                 numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
             }
             String[] numbers = numbersList.toArray(new String[0]);
-            long flexTime = calculateFlex(hr,min,sec,days);
+            long flexTime = calculateFlex(hr,min,sec,days,dia,mes,ano);
 
             Data messageData = new Data.Builder()
                     .putString("message", editMensagem.getText().toString())
                     .putStringArray("contacts",numbers)
                     .build();
 
-            PeriodicWorkRequest sendMessagework = new PeriodicWorkRequest.Builder(sendSMSWorker.class,days,
+            PeriodicWorkRequest sendSMSWorker = new PeriodicWorkRequest.Builder(sendSMSWorker.class,days,
                     TimeUnit.DAYS,
                     flexTime, TimeUnit.MILLISECONDS)
-                    .addTag("send_message_work")
+                    .addTag("send_sms_work")
                     .setInputData(messageData)
                     .build();
 
-            WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
-                    ExistingPeriodicWorkPolicy.REPLACE,sendMessagework);
+            WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_sms_work",
+                    ExistingPeriodicWorkPolicy.REPLACE,sendSMSWorker);
             Toast.makeText(this, "SMS agendado!", Toast.LENGTH_SHORT).show();
         }else{
             Toast.makeText(this, "Permissão negada!", Toast.LENGTH_SHORT).show();
@@ -440,30 +424,33 @@ public class Home extends AppCompatActivity {
     public void enviarWhats(){
         if(!results.isEmpty()){
             if(!editMensagem.getText().toString().isEmpty()){
-                List<String> numbersList = new ArrayList<String>();
-                for (int i=0;i<results.size();i++){
-                    numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
+                if(appInstalado("com.whatsapp")) {
+                    List<String> numbersList = new ArrayList<String>();
+                    for (int i = 0; i < results.size(); i++) {
+                        numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
+                    }
+                    String[] numbers = numbersList.toArray(new String[0]);
+                    long flexTime = calculateFlex(hr, min, sec, days, dia, mes, ano);
+
+                    Data messageData = new Data.Builder()
+                            .putString("message", editMensagem.getText().toString())
+                            .putStringArray("contacts", numbers)
+                            .build();
+
+                    PeriodicWorkRequest sendMessagework = new PeriodicWorkRequest.Builder(sendMessageWorker.class, days,
+                            TimeUnit.DAYS,
+                            flexTime, TimeUnit.MILLISECONDS)
+                            .setInputData(messageData)
+                            .addTag("send_message_work")
+                            .build();
+
+                    WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
+                            ExistingPeriodicWorkPolicy.REPLACE, sendMessagework);
+                    Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
+
+                }else{
+                    Toast.makeText(Home.this, "Whatsapp não instalado!", Toast.LENGTH_SHORT).show();
                 }
-                String[] numbers = numbersList.toArray(new String[0]);
-                long flexTime = calculateFlex(hr,min,sec,days);
-
-                Data messageData = new Data.Builder()
-                        .putString("message", editMensagem.getText().toString())
-                        .putStringArray("contacts",numbers)
-                        .build();
-
-                PeriodicWorkRequest sendMessagework = new PeriodicWorkRequest.Builder(sendMessageWorker.class,days,
-                        TimeUnit.DAYS,
-                        flexTime, TimeUnit.MILLISECONDS)
-                        .setInputData(messageData)
-                        .addTag("send_message_work")
-                        .build();
-
-                WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
-                        ExistingPeriodicWorkPolicy.REPLACE,sendMessagework);
-                Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
-
-
             }else{
                 Toast.makeText(Home.this, "Por favor adicione uma mensagem!", Toast.LENGTH_SHORT).show();
             }
@@ -531,10 +518,13 @@ public class Home extends AppCompatActivity {
         }
     }
 
-    private long calculateFlex(int hourOfTheDay,int minute,int sec, int periodInDays) {
+    private long calculateFlex(int hourOfTheDay,int minute,int sec, int periodInDays, int day, int month, int year) {
 
         // Initialize the calendar with today and the preferred time to run the job.
         Calendar cal1 = Calendar.getInstance();
+        cal1.set(Calendar.DAY_OF_MONTH,day);
+        cal1.set(Calendar.MONTH,month);
+        cal1.set(Calendar.YEAR,year);
         cal1.set(Calendar.HOUR_OF_DAY, hourOfTheDay);
         cal1.set(Calendar.MINUTE, minute);
         cal1.set(Calendar.SECOND, sec);
