@@ -1,9 +1,7 @@
 package com.example.menssageapp;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.work.Data;
@@ -14,28 +12,19 @@ import androidx.work.WorkManager;
 import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.NetworkOnMainThreadException;
-import android.provider.ContactsContract;
 import android.provider.Settings;
-import android.telephony.SmsManager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -44,13 +33,7 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
-import com.facebook.share.model.ShareMessengerGenericTemplateContent;
-import com.facebook.share.model.ShareMessengerGenericTemplateElement;
-import com.facebook.share.model.ShareMessengerURLActionButton;
-import com.facebook.share.widget.MessageDialog;
-import com.github.rtoshiro.util.format.SimpleMaskFormatter;
-import com.github.rtoshiro.util.format.text.MaskTextWatcher;
-import com.google.android.material.animation.MatrixEvaluator;
+import com.allyants.notifyme.NotifyMe;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -60,16 +43,6 @@ import com.wafflecopter.multicontactpicker.ContactResult;
 import com.wafflecopter.multicontactpicker.LimitColumn;
 import com.wafflecopter.multicontactpicker.MultiContactPicker;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -89,13 +62,15 @@ public class Home extends AppCompatActivity {
     ListView listView;
     MultiAutoCompleteTextView editMensagem;
 
-    private int hr=100;
+    final Calendar calendar = Calendar.getInstance();
+
+    private int hora=100;
     private int min=100;
     private int sec=100;
     private int days=1;
-    private int dia=1;
-    private int mes=1;
-    private int ano=1;
+    private int dia;
+    private int mes;
+    private int ano;
 
     ArrayList<Contato> listaContatos = new ArrayList<Contato>();
     List<ContactResult> results = new ArrayList<>();
@@ -127,7 +102,6 @@ public class Home extends AppCompatActivity {
         editMensagem = findViewById(R.id.mensagem);
         imageBtnSelecionarContato = findViewById(R.id.imageAdicionarContato);
 
-
         // Checando permissão para enviar SMS
         if(!checarPermissaoSMS(Manifest.permission.SEND_SMS)){
             ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.SEND_SMS},SEND_SMS_PERMISSION_REQUEST_CODE);
@@ -139,12 +113,6 @@ public class Home extends AppCompatActivity {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         }
-
-        // Adicionando máscara no campo Telefone
-        //smf = new SimpleMaskFormatter("(NN) NNNNN-NNNN");
-        //mtw = new MaskTextWatcher(editTelefone,smf);
-        //editTelefone.addTextChangedListener(mtw);
-        // FIM MÁSCARA
 
         Dexter.withContext(this)
                 .withPermissions(
@@ -167,7 +135,6 @@ public class Home extends AppCompatActivity {
         btnHora.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final Calendar calendar = Calendar.getInstance();
                 DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {
                     @Override
                     public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
@@ -185,13 +152,14 @@ public class Home extends AppCompatActivity {
                                 calendar.set(Calendar.HOUR_OF_DAY,hourOfDay);
                                 calendar.set(Calendar.MINUTE,minute);
 
-                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy - HH:mm");
+                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
                                 txtHora.setText(simpleDateFormat.format(calendar.getTime()));
-                                hr = hourOfDay;
+                                hora = hourOfDay;
                                 min = minute;
                             }
+
                         };
-                        new TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),false).show();
+                        new android.app.TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),true).show();
                     }
                 };
 
@@ -307,6 +275,107 @@ public class Home extends AppCompatActivity {
     }
 
     // ------------------------- FUNÇÕES -------------------------
+    // OK
+    public void enviarSMS(){
+
+        if(editMensagem.getText().toString().equals("")){
+            Toast.makeText(this,"Digite uma mensagem.",Toast.LENGTH_SHORT).show();
+        }else if(listaContatos.isEmpty()){
+            Toast.makeText(this,"Adicione um contato na lista.",Toast.LENGTH_SHORT).show();
+        }else if(checarPermissaoSMS(Manifest.permission.SEND_SMS)){
+            List<String> numbersList = new ArrayList<String>();
+            for(int i=0; i<results.size(); i++){
+                numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
+            }
+            String[] numbers = numbersList.toArray(new String[0]);
+            long flexTime = calculateFlex(hora,min,sec,days,dia,mes,ano);
+
+            Data messageData = new Data.Builder()
+                    .putString("message", editMensagem.getText().toString())
+                    .putStringArray("contacts",numbers)
+                    .build();
+
+
+            PeriodicWorkRequest sendSMSWorker = new PeriodicWorkRequest.Builder(sendSMSWorker.class,days,
+                    TimeUnit.DAYS,flexTime, TimeUnit.MILLISECONDS)
+                    .addTag("send_sms_work")
+                    .setInputData(messageData)
+                    .build();
+
+
+            WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_sms_work",
+                    ExistingPeriodicWorkPolicy.REPLACE,sendSMSWorker);
+
+            NotifyMe notifyMe = new NotifyMe.Builder(getApplicationContext())
+                    .title("Envio de SMS")
+                    .content("Seu SMS foi enviado!")
+                    .color(255,0,0,255)
+                    .led_color(255,255,255,255)
+                    .time(calendar)
+                    .addAction(new Intent(),"Soneca",false)
+                    .key("test")
+                    .addAction(new Intent(),"Dispensar",true,false)
+                    .addAction(new Intent(),"Feito")
+                    .large_icon(R.mipmap.ic_launcher_round)
+                    .build();
+
+            Toast.makeText(this, "SMS agendado!", Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(this, "Permissão negada!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // OK
+    public void enviarWhats(){
+        if(!results.isEmpty()){
+            if(!editMensagem.getText().toString().isEmpty()){
+                if(appInstalado("com.whatsapp")) {
+                    List<String> numbersList = new ArrayList<String>();
+                    for (int i = 0; i < results.size(); i++) {
+                        numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
+                    }
+                    String[] numbers = numbersList.toArray(new String[0]);
+                    long flexTime = calculateFlex(hora, min, sec, days, dia, mes, ano);
+
+                    Data messageData = new Data.Builder()
+                            .putString("message", editMensagem.getText().toString())
+                            .putStringArray("contacts", numbers)
+                            .build();
+
+                    PeriodicWorkRequest sendMessagework = new PeriodicWorkRequest.Builder(sendMessageWorker.class, days,
+                            TimeUnit.DAYS, flexTime, TimeUnit.MILLISECONDS)
+                            .setInputData(messageData)
+                            .addTag("send_message_work")
+                            .build();
+
+
+                    WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
+                            ExistingPeriodicWorkPolicy.REPLACE, sendMessagework);
+                    Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
+
+                    NotifyMe notifyMe = new NotifyMe.Builder(getApplicationContext())
+                            .title("Envio de Whatsapp")
+                            .content("Seu Whatsapp foi enviado!")
+                            .color(255,0,0,255)
+                            .led_color(255,255,255,255)
+                            .time(calendar)
+                            .addAction(new Intent(),"Soneca",false)
+                            .key("test")
+                            .addAction(new Intent(),"Dispensar",true,false)
+                            .addAction(new Intent(),"Feito")
+                            .large_icon(R.mipmap.ic_launcher_round)
+                            .build();
+                }else{
+                    Toast.makeText(Home.this, "Whatsapp não instalado!", Toast.LENGTH_SHORT).show();
+                }
+            }else{
+                Toast.makeText(Home.this, "Por favor adicione uma mensagem!", Toast.LENGTH_SHORT).show();
+            }
+        }else{
+            Toast.makeText(Home.this, "Selecione um número de contato.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private boolean isAccessibilityOn(Context context) {
         int accessibilityEnabled = 0;
         final String service = context.getPackageName () + "/" + WhatsAppAccessibilityService.class.getCanonicalName ();
@@ -331,132 +400,6 @@ public class Home extends AppCompatActivity {
         }
 
         return false;
-    }
-
-    // CORRIGIR - NÃO ESTÁ FUNCIONANDO
-    /*
-    private void enviarFacebook() {
-        String mensagem = editMensagem.getText().toString();
-        int app_id = R.string.facebook_app_id;
-        String user_id = "1991047964360713";
-
-        if(listaContatos.isEmpty() || editMensagem.getText().toString().equals("")){
-            Toast.makeText(this,"Adicione um contato ou digite uma mensagem. Tente novamente.",Toast.LENGTH_SHORT).show();
-        }
-        else {
-            if (isPackageExisted("com.facebook.orca")) {
-                for(int i=0; i<listaContatos.size(); i++) {
-                    String numero = listaContatos.get(i).getTelefone();
-                    String url = "fb-messenger://user/";
-
-                    Uri uri = Uri.parse(url);
-                    uri = ContentUris.withAppendedId(uri, Long.parseLong(user_id));
-                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                    intent.setData(uri);
-                    startActivity(intent);
-                }
-            } else {
-                Toast.makeText(this, "Por favor instale o facebook messenger", Toast.LENGTH_LONG).show();
-            }
-        }
-
-        /*
-        ShareMessengerURLActionButton actionButton =
-                new ShareMessengerURLActionButton.Builder()
-                        .setTitle("Visit Facebook")
-                        .setUrl(Uri.parse("https://www.facebook.com"))
-                        .build();
-        ShareMessengerGenericTemplateElement genericTemplateElement =
-                new ShareMessengerGenericTemplateElement.Builder()
-                        .setTitle("Visit Facebook")
-                        .setSubtitle("Visit Messenger")
-                        .setImageUrl(Uri.parse("heeps://Your/Image/Url"))
-                        .setButton(actionButton)
-                        .build();
-        ShareMessengerGenericTemplateContent genericTemplateContent =
-                new ShareMessengerGenericTemplateContent.Builder()
-                        .setPageId(String.valueOf(R.string.facebook_app_id)) // Your page ID, required
-                        .setGenericTemplateElement(genericTemplateElement)
-                        .build();
-
-        MessageDialog.show(Home, genericTemplateContent);
-
-
-    }
-     */
-
-    // OK
-    public void enviarSMS(){
-
-        if(editMensagem.getText().toString().equals("")){
-            Toast.makeText(this,"Digite uma mensagem.",Toast.LENGTH_SHORT).show();
-        }else if(listaContatos.isEmpty()){
-            Toast.makeText(this,"Adicione um contato na lista.",Toast.LENGTH_SHORT).show();
-        }else if(checarPermissaoSMS(Manifest.permission.SEND_SMS)){
-            List<String> numbersList = new ArrayList<String>();
-            for(int i=0; i<results.size(); i++){
-                numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
-            }
-            String[] numbers = numbersList.toArray(new String[0]);
-            long flexTime = calculateFlex(hr,min,sec,days,dia,mes,ano);
-
-            Data messageData = new Data.Builder()
-                    .putString("message", editMensagem.getText().toString())
-                    .putStringArray("contacts",numbers)
-                    .build();
-
-            PeriodicWorkRequest sendSMSWorker = new PeriodicWorkRequest.Builder(sendSMSWorker.class,days,
-                    TimeUnit.DAYS,
-                    flexTime, TimeUnit.MILLISECONDS)
-                    .addTag("send_sms_work")
-                    .setInputData(messageData)
-                    .build();
-
-            WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_sms_work",
-                    ExistingPeriodicWorkPolicy.REPLACE,sendSMSWorker);
-            Toast.makeText(this, "SMS agendado!", Toast.LENGTH_SHORT).show();
-        }else{
-            Toast.makeText(this, "Permissão negada!", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    // OK
-    public void enviarWhats(){
-        if(!results.isEmpty()){
-            if(!editMensagem.getText().toString().isEmpty()){
-                if(appInstalado("com.whatsapp")) {
-                    List<String> numbersList = new ArrayList<String>();
-                    for (int i = 0; i < results.size(); i++) {
-                        numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
-                    }
-                    String[] numbers = numbersList.toArray(new String[0]);
-                    long flexTime = calculateFlex(hr, min, sec, days, dia, mes, ano);
-
-                    Data messageData = new Data.Builder()
-                            .putString("message", editMensagem.getText().toString())
-                            .putStringArray("contacts", numbers)
-                            .build();
-
-                    PeriodicWorkRequest sendMessagework = new PeriodicWorkRequest.Builder(sendMessageWorker.class, days,
-                            TimeUnit.DAYS,
-                            flexTime, TimeUnit.MILLISECONDS)
-                            .setInputData(messageData)
-                            .addTag("send_message_work")
-                            .build();
-
-                    WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
-                            ExistingPeriodicWorkPolicy.REPLACE, sendMessagework);
-                    Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
-
-                }else{
-                    Toast.makeText(Home.this, "Whatsapp não instalado!", Toast.LENGTH_SHORT).show();
-                }
-            }else{
-                Toast.makeText(Home.this, "Por favor adicione uma mensagem!", Toast.LENGTH_SHORT).show();
-            }
-        }else{
-            Toast.makeText(Home.this, "Selecione um número de contato.", Toast.LENGTH_SHORT).show();
-        }
     }
 
     // Verificar se o aplicativo do whatsapp está instalado
@@ -534,7 +477,8 @@ public class Home extends AppCompatActivity {
 
         if (cal2.getTimeInMillis() < cal1.getTimeInMillis()) {
             // Add the worker periodicity.
-            cal2.setTimeInMillis(cal2.getTimeInMillis() + TimeUnit.DAYS.toMillis(periodInDays));
+            cal2.setTimeInMillis(cal2.getTimeInMillis() + TimeUnit.DAYS.toMillis(periodInDays) + TimeUnit.HOURS.toMillis(periodInDays) + TimeUnit.MINUTES.toMillis(periodInDays));
+            //cal2.setTimeInMillis(cal1.getTimeInMillis() + TimeUnit.DAYS.toMillis(periodInDays));
         }
 
         long delta = (cal2.getTimeInMillis() - cal1.getTimeInMillis());
@@ -542,4 +486,5 @@ public class Home extends AppCompatActivity {
         return ((delta > PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS) ? delta
                 : PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS);
     }
+
 }

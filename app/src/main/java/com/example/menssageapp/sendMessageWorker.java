@@ -32,7 +32,7 @@ public class sendMessageWorker extends Worker {
                     PackageManager packageManager = Objects.requireNonNull(getApplicationContext()).getPackageManager();
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     try {
-                        String url = "https://api.whatsapp.com/send?phone=" + numbers[j] + "&text=" + URLEncoder.encode(message + "   ", "UTF-8");
+                        String url = "https://api.whatsapp.com/send?phone=" + numbers[j] + "&text=" + URLEncoder.encode(message, "UTF-8");
                         intent.setPackage("com.whatsapp");
                         intent.setData(Uri.parse(url));
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
