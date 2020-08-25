@@ -4,15 +4,4 @@
         android:title="Home"
         android:icon="@drawable/ic_home"/>
 
-    <item android:id="@+id/nav_historico"
-        android:title="Histórico"
-        android:icon="@drawable/ic_historico"/>
-
-    <item android:id="@+id/nav_sobre"
-        android:title="Sobre"
-        android:icon="@drawable/ic_sobre"/>
-
-    <item android:id="@+id/nav_ajuda"
-        android:title="Ajuda"
-        android:icon="@drawable/ic_ajuda"/>
 </menu>

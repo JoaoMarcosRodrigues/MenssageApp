@@ -21,10 +21,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -32,8 +34,8 @@ import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
+import android.widget.Toolbar;
 
-import com.allyants.notifyme.NotifyMe;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -49,11 +51,13 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class Home extends AppCompatActivity {
+
+public class Home extends AppCompatActivity{
 
     private static final int CONTACT_PICKER_REQUEST = 202;
     TextView txtHora;
-    TextView viewLimpar;
+    Toolbar toolbar;
+    Button btnLimpar,btnHistorico;
     ImageButton imageBtnSelecionarContato;
     ImageButton btnEnviarSMS;
     ImageButton btnEnviarWhats;
@@ -62,20 +66,18 @@ public class Home extends AppCompatActivity {
     ListView listView;
     MultiAutoCompleteTextView editMensagem;
 
-    final Calendar calendar = Calendar.getInstance();
-
     private int hora=100;
     private int min=100;
-    private int sec=100;
     private int days=1;
-    private int dia;
-    private int mes;
-    private int ano;
+    private int dia=1;
+    private int mes=1;
+    private int ano=1;
 
     ArrayList<Contato> listaContatos = new ArrayList<Contato>();
     List<ContactResult> results = new ArrayList<>();
 
     ArrayAdapter<Contato> adapter;
+    DBHelper dbHelper;
 
     final int SEND_SMS_PERMISSION_REQUEST_CODE = 1;
 
@@ -91,8 +93,12 @@ public class Home extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        toolbar = findViewById(R.id.toolbar);
+        setActionBar(toolbar);
+        getActionBar().setTitle("Home");
 
-        viewLimpar = findViewById(R.id.viewLimparLista);
+        btnLimpar = findViewById(R.id.btnLimpar);
+        btnHistorico = findViewById(R.id.btnHistorico);
         txtHora = findViewById(R.id.viewHora);
         btnEnviarSMS = findViewById(R.id.btnEnviarSMS);
         btnEnviarWhats = findViewById(R.id.btnEnviarWhats);
@@ -101,6 +107,8 @@ public class Home extends AppCompatActivity {
         listView = findViewById(R.id.listView);
         editMensagem = findViewById(R.id.mensagem);
         imageBtnSelecionarContato = findViewById(R.id.imageAdicionarContato);
+
+        dbHelper = new DBHelper(this);
 
         // Checando permissão para enviar SMS
         if(!checarPermissaoSMS(Manifest.permission.SEND_SMS)){
@@ -124,17 +132,46 @@ public class Home extends AppCompatActivity {
         }).check();
 
 
-        viewLimpar.setOnClickListener(new View.OnClickListener() {
+        btnHistorico.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                listaContatos.clear();
-                adapter.notifyDataSetChanged();
+                Intent intent = new Intent(Home.this,HistoricoHorarios.class);
+                startActivity(intent);
+            }
+        });
+
+        btnLimpar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(listaContatos.isEmpty()){
+                    Toast.makeText(Home.this,"A lista está vazia.",Toast.LENGTH_SHORT).show();
+                }else {
+                    AlertDialog.Builder d = new AlertDialog.Builder(Home.this);
+                    d.setTitle("Excluir todos os contatos.")
+                            .setIcon(android.R.drawable.ic_menu_delete)
+                            .setMessage("Tem certeza que deseja excluir todos os contatos da lista?")
+                            .setPositiveButton("Sim", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    listaContatos.clear();
+                                    adapter.notifyDataSetChanged();
+                                }
+                            })
+                            .setNegativeButton("Não", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Toast.makeText(Home.this, "Operação cancelada.", Toast.LENGTH_SHORT).show();
+                                }
+                            })
+                            .show();
+                }
             }
         });
 
         btnHora.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                final Calendar calendar = Calendar.getInstance();
                 DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {
                     @Override
                     public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
@@ -152,17 +189,16 @@ public class Home extends AppCompatActivity {
                                 calendar.set(Calendar.HOUR_OF_DAY,hourOfDay);
                                 calendar.set(Calendar.MINUTE,minute);
 
-                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
-                                txtHora.setText(simpleDateFormat.format(calendar.getTime()));
                                 hora = hourOfDay;
                                 min = minute;
-                            }
 
+                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
+                                txtHora.setText(simpleDateFormat.format(calendar.getTime()));
+                            }
                         };
-                        new android.app.TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),true).show();
+                        new TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),false).show();
                     }
                 };
-
                 new DatePickerDialog(Home.this,dateSetListener,calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH)).show();
             }
         });
@@ -180,6 +216,10 @@ public class Home extends AppCompatActivity {
             @Override
             public void onClick(View v){
                 enviarWhats();
+                String horario = txtHora.getText().toString();
+                String mensagem = editMensagem.getText().toString();
+
+                addLista(horario,mensagem);
             }
         });
 
@@ -277,49 +317,37 @@ public class Home extends AppCompatActivity {
     // ------------------------- FUNÇÕES -------------------------
     // OK
     public void enviarSMS(){
-
-        if(editMensagem.getText().toString().equals("")){
+        if(txtHora.getText().toString().equals("")) {
+            Toast.makeText(Home.this, "Selecione um horário.", Toast.LENGTH_SHORT).show();
+        }else if(editMensagem.getText().toString().equals("")){
             Toast.makeText(this,"Digite uma mensagem.",Toast.LENGTH_SHORT).show();
         }else if(listaContatos.isEmpty()){
             Toast.makeText(this,"Adicione um contato na lista.",Toast.LENGTH_SHORT).show();
         }else if(checarPermissaoSMS(Manifest.permission.SEND_SMS)){
             List<String> numbersList = new ArrayList<String>();
-            for(int i=0; i<results.size(); i++){
+            for (int i=0;i<results.size();i++){
                 numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
             }
             String[] numbers = numbersList.toArray(new String[0]);
-            long flexTime = calculateFlex(hora,min,sec,days,dia,mes,ano);
+            long flexTime = calculateFlex(hora,min,days,dia,mes,ano);
 
             Data messageData = new Data.Builder()
                     .putString("message", editMensagem.getText().toString())
                     .putStringArray("contacts",numbers)
                     .build();
 
-
             PeriodicWorkRequest sendSMSWorker = new PeriodicWorkRequest.Builder(sendSMSWorker.class,days,
-                    TimeUnit.DAYS,flexTime, TimeUnit.MILLISECONDS)
-                    .addTag("send_sms_work")
+                    TimeUnit.DAYS, flexTime, TimeUnit.MILLISECONDS)
                     .setInputData(messageData)
+                    .addTag("send_sms_work")
                     .build();
 
 
             WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_sms_work",
                     ExistingPeriodicWorkPolicy.REPLACE,sendSMSWorker);
 
-            NotifyMe notifyMe = new NotifyMe.Builder(getApplicationContext())
-                    .title("Envio de SMS")
-                    .content("Seu SMS foi enviado!")
-                    .color(255,0,0,255)
-                    .led_color(255,255,255,255)
-                    .time(calendar)
-                    .addAction(new Intent(),"Soneca",false)
-                    .key("test")
-                    .addAction(new Intent(),"Dispensar",true,false)
-                    .addAction(new Intent(),"Feito")
-                    .large_icon(R.mipmap.ic_launcher_round)
-                    .build();
-
             Toast.makeText(this, "SMS agendado!", Toast.LENGTH_SHORT).show();
+            //txtHora.setText("");
         }else{
             Toast.makeText(this, "Permissão negada!", Toast.LENGTH_SHORT).show();
         }
@@ -327,52 +355,43 @@ public class Home extends AppCompatActivity {
 
     // OK
     public void enviarWhats(){
-        if(!results.isEmpty()){
-            if(!editMensagem.getText().toString().isEmpty()){
-                if(appInstalado("com.whatsapp")) {
+        if(hora!=100 && min!=100){
+            if(!results.isEmpty()){
+                if(!editMensagem.getText().toString().isEmpty()){
                     List<String> numbersList = new ArrayList<String>();
-                    for (int i = 0; i < results.size(); i++) {
+                    for (int i=0;i<results.size();i++){
                         numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
                     }
                     String[] numbers = numbersList.toArray(new String[0]);
-                    long flexTime = calculateFlex(hora, min, sec, days, dia, mes, ano);
+                    long flexTime = calculateFlex(hora,min,days,dia,mes,ano);
 
                     Data messageData = new Data.Builder()
                             .putString("message", editMensagem.getText().toString())
-                            .putStringArray("contacts", numbers)
+                            .putStringArray("contacts",numbers)
                             .build();
 
-                    PeriodicWorkRequest sendMessagework = new PeriodicWorkRequest.Builder(sendMessageWorker.class, days,
-                            TimeUnit.DAYS, flexTime, TimeUnit.MILLISECONDS)
+                    PeriodicWorkRequest sendMessagework = new PeriodicWorkRequest.Builder(sendMessageWorker.class,days,
+                            TimeUnit.DAYS,
+                            flexTime, TimeUnit.MILLISECONDS)
                             .setInputData(messageData)
                             .addTag("send_message_work")
                             .build();
 
 
-                    WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
-                            ExistingPeriodicWorkPolicy.REPLACE, sendMessagework);
-                    Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
 
-                    NotifyMe notifyMe = new NotifyMe.Builder(getApplicationContext())
-                            .title("Envio de Whatsapp")
-                            .content("Seu Whatsapp foi enviado!")
-                            .color(255,0,0,255)
-                            .led_color(255,255,255,255)
-                            .time(calendar)
-                            .addAction(new Intent(),"Soneca",false)
-                            .key("test")
-                            .addAction(new Intent(),"Dispensar",true,false)
-                            .addAction(new Intent(),"Feito")
-                            .large_icon(R.mipmap.ic_launcher_round)
-                            .build();
-                }else{
-                    Toast.makeText(Home.this, "Whatsapp não instalado!", Toast.LENGTH_SHORT).show();
+                    WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
+                            ExistingPeriodicWorkPolicy.REPLACE,sendMessagework);
+
+                    Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
+                    //txtHora.setText("");
+                } else {
+                    Toast.makeText(Home.this, "Por favor adicione uma mensagem!", Toast.LENGTH_SHORT).show();
                 }
-            }else{
-                Toast.makeText(Home.this, "Por favor adicione uma mensagem!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(Home.this, "Selecione um número de contato.", Toast.LENGTH_SHORT).show();
             }
         }else{
-            Toast.makeText(Home.this, "Selecione um número de contato.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(Home.this, "Selecione um horário.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -461,30 +480,45 @@ public class Home extends AppCompatActivity {
         }
     }
 
-    private long calculateFlex(int hourOfTheDay,int minute,int sec, int periodInDays, int day, int month, int year) {
+    private long calculateFlex(int hourOfTheDay,int minute, int periodInDays, int day, int month, int year) {
 
         // Initialize the calendar with today and the preferred time to run the job.
         Calendar cal1 = Calendar.getInstance();
+        cal1.set(Calendar.HOUR_OF_DAY, hourOfTheDay);
+        cal1.set(Calendar.MINUTE, minute);
         cal1.set(Calendar.DAY_OF_MONTH,day);
         cal1.set(Calendar.MONTH,month);
         cal1.set(Calendar.YEAR,year);
-        cal1.set(Calendar.HOUR_OF_DAY, hourOfTheDay);
-        cal1.set(Calendar.MINUTE, minute);
-        cal1.set(Calendar.SECOND, sec);
 
         // Initialize a calendar with now.
         Calendar cal2 = Calendar.getInstance();
 
         if (cal2.getTimeInMillis() < cal1.getTimeInMillis()) {
             // Add the worker periodicity.
-            cal2.setTimeInMillis(cal2.getTimeInMillis() + TimeUnit.DAYS.toMillis(periodInDays) + TimeUnit.HOURS.toMillis(periodInDays) + TimeUnit.MINUTES.toMillis(periodInDays));
-            //cal2.setTimeInMillis(cal1.getTimeInMillis() + TimeUnit.DAYS.toMillis(periodInDays));
+            cal2.setTimeInMillis(cal2.getTimeInMillis() + TimeUnit.DAYS.toMillis(periodInDays));
         }
+
 
         long delta = (cal2.getTimeInMillis() - cal1.getTimeInMillis());
 
-        return ((delta > PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS) ? delta
-                : PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
+        Log.i("cal1","Cal1 = "+dateFormat.format(cal1.getTime()));
+        Log.i("cal2","Cal2 = "+dateFormat.format(cal2.getTime()));
+        //Log.i("delta","(cal2 - cal1 ) Delta = "+dateFormat.format(delta));
+        Log.i("PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS","PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS = "+dateFormat.format(PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS));
+
+        return (delta > PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS) ? delta : PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS;
+        //return cal1.getTimeInMillis();
+    }
+
+    private void addLista(String horario, String mensagem) {
+        boolean insert = dbHelper.addHorario(horario,mensagem);
+
+        if(insert==true){
+            Toast.makeText(this,"Horario cadastrado com sucesso!",Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(this,"Desculpe, houve um erro!",Toast.LENGTH_SHORT).show();
+        }
     }
 
 }

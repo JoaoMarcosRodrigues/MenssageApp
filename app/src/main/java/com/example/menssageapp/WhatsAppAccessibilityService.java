@@ -54,6 +54,9 @@ public class WhatsAppAccessibilityService extends AccessibilityService {
             Thread.sleep(2000);
             performGlobalAction(GLOBAL_ACTION_BACK);
         }catch (InterruptedException ignored) {}
+
+
+
     }
 
     @Override
