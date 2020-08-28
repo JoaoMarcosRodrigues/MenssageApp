@@ -216,10 +216,6 @@ public class Home extends AppCompatActivity{
             @Override
             public void onClick(View v){
                 enviarWhats();
-                String horario = txtHora.getText().toString();
-                String mensagem = editMensagem.getText().toString();
-
-                addLista(horario,mensagem);
             }
         });
 
@@ -378,11 +374,16 @@ public class Home extends AppCompatActivity{
                             .build();
 
 
-
                     WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_message_work",
                             ExistingPeriodicWorkPolicy.REPLACE,sendMessagework);
 
                     Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
+
+                    // CADASTRAR NO BANCO O HORÁRIO AGENDADO
+                    String horario = txtHora.getText().toString();
+                    String mensagem = editMensagem.getText().toString();
+
+                    addLista(horario,mensagem,true);
                     //txtHora.setText("");
                 } else {
                     Toast.makeText(Home.this, "Por favor adicione uma mensagem!", Toast.LENGTH_SHORT).show();
@@ -511,8 +512,8 @@ public class Home extends AppCompatActivity{
         //return cal1.getTimeInMillis();
     }
 
-    private void addLista(String horario, String mensagem) {
-        boolean insert = dbHelper.addHorario(horario,mensagem);
+    private void addLista(String horario, String mensagem, boolean status) {
+        boolean insert = dbHelper.addHorario(horario,mensagem,status);
 
         if(insert==true){
             Toast.makeText(this,"Horario cadastrado com sucesso!",Toast.LENGTH_SHORT).show();

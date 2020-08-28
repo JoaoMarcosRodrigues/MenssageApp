@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.Switch;
 import android.widget.Toast;
 import android.widget.Toolbar;
 
@@ -21,11 +22,10 @@ public class HistoricoHorarios extends AppCompatActivity {
     Button btnSalvar;
     Toolbar toolbar;
 
-    ArrayAdapter<Horario> adapter;
+    ArrayList<Horario> listaHorarios = new ArrayList<Horario>();
     ListView listViewHorarios;
-    ArrayList<Horario> arrayListHorario = new ArrayList<Horario>();
-    Horario horario = new Horario();
     DBHelper dbHelper;
+    ListAdapter listAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +50,8 @@ public class HistoricoHorarios extends AppCompatActivity {
         listViewHorarios = findViewById(R.id.listHorarios);
         dbHelper = new DBHelper(this);
 
-        ArrayList<Horario> listaHorarios = new ArrayList<Horario>();
-        Cursor data = dbHelper.getAllHorarios();
+
+        final Cursor data = dbHelper.getAllHorarios();
 
         if(data.getCount() == 0){
             Toast.makeText(this,"A lista está vazia :(",Toast.LENGTH_SHORT).show();
@@ -60,45 +60,27 @@ public class HistoricoHorarios extends AppCompatActivity {
                 Horario h = new Horario();
                 h.setHorario(data.getString(1));
                 h.setMensagem(data.getString(2));
+                h.setStatus(true);
 
                 listaHorarios.add(h);
-                ListAdapter listAdapter = new HorarioAdapter(this,listaHorarios);
+                listAdapter = new HorarioAdapter(this,listaHorarios);
                 listViewHorarios.setAdapter(listAdapter);
             }
         }
-        /*
-        try{
-            List<String> horarios = new ArrayList<>();
-            horarios.add("7:00");
-            horarios.add("8:00");
-            horarios.add("9:00");
-            horarios.add("10:00");
-            horarios.add("11:00");
-            List<String> mensagens = new ArrayList<>();
-            mensagens.add("Teste 1");
-            mensagens.add("Teste 2");
-            mensagens.add("Teste 3");
-            mensagens.add("Teste 4");
-            mensagens.add("Teste 5");
-
-            for(int i=0; i<horarios.size(); i++) {
-                //Contato contato = new Contato();
-                Horario horario = new Horario();
-                horario.setHorario(horarios.get(i));
-                horario.setMensagem(mensagens.get(i));
-                arrayListHorario.add(horario);
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-         */
 
         btnSalvar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(HistoricoHorarios.this,"Alterações salvas!",Toast.LENGTH_SHORT).show();
+                redefinirStatus("0",false);
             }
         });
+    }
+
+    public void redefinirStatus(String id, boolean status){
+        if(dbHelper.redefinirStatus(id,status)){
+            Toast.makeText(HistoricoHorarios.this,"Alterações salvas!",Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(HistoricoHorarios.this,"Houve um erro =(",Toast.LENGTH_SHORT).show();
+        }
     }
 }

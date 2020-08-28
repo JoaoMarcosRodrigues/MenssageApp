@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -30,9 +31,11 @@ public class HorarioAdapter extends ArrayAdapter<Horario> {
 
         TextView horario = rowView.findViewById(R.id.txtHorario);
         TextView mensagem = rowView.findViewById(R.id.txtMensagem);
+        Switch habilitar = rowView.findViewById(R.id.switchHabilitar);
 
         horario.setText(elementos.get(position).getHorario());
         mensagem.setText(elementos.get(position).getMensagem());
+        habilitar.setChecked(true);
 
         return rowView;
     }

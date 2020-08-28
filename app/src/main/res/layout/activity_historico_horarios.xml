@@ -18,7 +18,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:saveEnabled="true"
-        android:layout_marginTop="20dp"
         android:footerDividersEnabled="true"
         android:layout_below="@+id/toolbar"
         android:layout_above="@+id/btnSalvar"/>
