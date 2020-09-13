@@ -1,4 +1,4 @@
-package com.example.menssageapp;
+package com.example.menssageapp.horario;
 
 public class Horario {
     String horario;

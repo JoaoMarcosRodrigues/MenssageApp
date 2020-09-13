@@ -10,7 +10,6 @@ import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
 import android.Manifest;
-import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -21,13 +20,11 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
@@ -36,6 +33,10 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 import android.widget.Toolbar;
 
+import com.example.menssageapp.contato.Contato;
+import com.example.menssageapp.contato.ContatoAdapter;
+import com.example.menssageapp.workers.WhatsAppAccessibilityService;
+import com.example.menssageapp.workers.sendMessageWorker;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -57,27 +58,23 @@ public class Home extends AppCompatActivity{
     private static final int CONTACT_PICKER_REQUEST = 202;
     TextView txtHora;
     Toolbar toolbar;
-    Button btnLimpar,btnHistorico;
+    Button btnLimpar;
     ImageButton imageBtnSelecionarContato;
     ImageButton btnEnviarSMS;
     ImageButton btnEnviarWhats;
-    //ImageButton btnEnviarFacebook;
     ImageButton btnHora;
     ListView listView;
     MultiAutoCompleteTextView editMensagem;
 
     private int hora=100;
     private int min=100;
+    private int sec=100;
     private int days=1;
-    private int dia=1;
-    private int mes=1;
-    private int ano=1;
 
     ArrayList<Contato> listaContatos = new ArrayList<Contato>();
     List<ContactResult> results = new ArrayList<>();
 
     ArrayAdapter<Contato> adapter;
-    DBHelper dbHelper;
 
     final int SEND_SMS_PERMISSION_REQUEST_CODE = 1;
 
@@ -98,7 +95,6 @@ public class Home extends AppCompatActivity{
         getActionBar().setTitle("Home");
 
         btnLimpar = findViewById(R.id.btnLimpar);
-        btnHistorico = findViewById(R.id.btnHistorico);
         txtHora = findViewById(R.id.viewHora);
         btnEnviarSMS = findViewById(R.id.btnEnviarSMS);
         btnEnviarWhats = findViewById(R.id.btnEnviarWhats);
@@ -108,7 +104,14 @@ public class Home extends AppCompatActivity{
         editMensagem = findViewById(R.id.mensagem);
         imageBtnSelecionarContato = findViewById(R.id.imageAdicionarContato);
 
-        dbHelper = new DBHelper(this);
+        Dexter.withContext(this)
+                .withPermissions(
+                        Manifest.permission.SEND_SMS,
+                        Manifest.permission.READ_CONTACTS
+                ).withListener(new MultiplePermissionsListener() {
+            @Override public void onPermissionsChecked(MultiplePermissionsReport report) {/* ... */}
+            @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
+        }).check();
 
         // Checando permissão para enviar SMS
         if(!checarPermissaoSMS(Manifest.permission.SEND_SMS)){
@@ -121,24 +124,6 @@ public class Home extends AppCompatActivity{
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         }
-
-        Dexter.withContext(this)
-                .withPermissions(
-                        Manifest.permission.SEND_SMS,
-                        Manifest.permission.READ_CONTACTS
-                ).withListener(new MultiplePermissionsListener() {
-            @Override public void onPermissionsChecked(MultiplePermissionsReport report) {/* ... */}
-            @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
-        }).check();
-
-
-        btnHistorico.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(Home.this,HistoricoHorarios.class);
-                startActivity(intent);
-            }
-        });
 
         btnLimpar.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -172,34 +157,21 @@ public class Home extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 final Calendar calendar = Calendar.getInstance();
-                DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {
+
+                TimePickerDialog.OnTimeSetListener timeSetListener = new TimePickerDialog.OnTimeSetListener() {
                     @Override
-                    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                        calendar.set(Calendar.YEAR,year);
-                        calendar.set(Calendar.MONTH,month);
-                        calendar.set(Calendar.DAY_OF_MONTH,dayOfMonth);
+                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        calendar.set(Calendar.HOUR_OF_DAY,hourOfDay);
+                        calendar.set(Calendar.MINUTE,minute);
 
-                        dia = dayOfMonth;
-                        mes = month;
-                        ano = year;
+                        hora = hourOfDay;
+                        min = minute;
 
-                        TimePickerDialog.OnTimeSetListener timeSetListener = new TimePickerDialog.OnTimeSetListener() {
-                            @Override
-                            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                                calendar.set(Calendar.HOUR_OF_DAY,hourOfDay);
-                                calendar.set(Calendar.MINUTE,minute);
-
-                                hora = hourOfDay;
-                                min = minute;
-
-                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
-                                txtHora.setText(simpleDateFormat.format(calendar.getTime()));
-                            }
-                        };
-                        new TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),false).show();
+                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
+                        txtHora.setText(simpleDateFormat.format(calendar.getTime()));
                     }
                 };
-                new DatePickerDialog(Home.this,dateSetListener,calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH)).show();
+                new TimePickerDialog(Home.this,timeSetListener,calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),false).show();
             }
         });
 
@@ -218,16 +190,6 @@ public class Home extends AppCompatActivity{
                 enviarWhats();
             }
         });
-
-        /*
-        // Função para enviar mensagem pelo Facebook
-        btnEnviarFacebook.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                enviarFacebook();
-            }
-        });
-         */
 
         // Função para excluir um contato na lista ao pressionar
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -325,25 +287,23 @@ public class Home extends AppCompatActivity{
                 numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
             }
             String[] numbers = numbersList.toArray(new String[0]);
-            long flexTime = calculateFlex(hora,min,days,dia,mes,ano);
+            long flexTime = calculateFlex(hora,min,sec,days);
 
             Data messageData = new Data.Builder()
                     .putString("message", editMensagem.getText().toString())
                     .putStringArray("contacts",numbers)
                     .build();
 
-            PeriodicWorkRequest sendSMSWorker = new PeriodicWorkRequest.Builder(sendSMSWorker.class,days,
+            PeriodicWorkRequest sendSMSWorker = new PeriodicWorkRequest.Builder(com.example.menssageapp.workers.sendSMSWorker.class,days,
                     TimeUnit.DAYS, flexTime, TimeUnit.MILLISECONDS)
                     .setInputData(messageData)
                     .addTag("send_sms_work")
                     .build();
 
-
             WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork("send_sms_work",
                     ExistingPeriodicWorkPolicy.REPLACE,sendSMSWorker);
 
             Toast.makeText(this, "SMS agendado!", Toast.LENGTH_SHORT).show();
-            //txtHora.setText("");
         }else{
             Toast.makeText(this, "Permissão negada!", Toast.LENGTH_SHORT).show();
         }
@@ -359,7 +319,7 @@ public class Home extends AppCompatActivity{
                         numbersList.add(results.get(i).getPhoneNumbers().get(0).getNumber());
                     }
                     String[] numbers = numbersList.toArray(new String[0]);
-                    long flexTime = calculateFlex(hora,min,days,dia,mes,ano);
+                    long flexTime = calculateFlex(hora,min,sec,days);
 
                     Data messageData = new Data.Builder()
                             .putString("message", editMensagem.getText().toString())
@@ -378,13 +338,6 @@ public class Home extends AppCompatActivity{
                             ExistingPeriodicWorkPolicy.REPLACE,sendMessagework);
 
                     Toast.makeText(Home.this, "Whatsapp agendado!", Toast.LENGTH_SHORT).show();
-
-                    // CADASTRAR NO BANCO O HORÁRIO AGENDADO
-                    String horario = txtHora.getText().toString();
-                    String mensagem = editMensagem.getText().toString();
-
-                    addLista(horario,mensagem,true);
-                    //txtHora.setText("");
                 } else {
                     Toast.makeText(Home.this, "Por favor adicione uma mensagem!", Toast.LENGTH_SHORT).show();
                 }
@@ -481,15 +434,13 @@ public class Home extends AppCompatActivity{
         }
     }
 
-    private long calculateFlex(int hourOfTheDay,int minute, int periodInDays, int day, int month, int year) {
+    private long calculateFlex(int hourOfTheDay,int minute,int sec, int periodInDays) {
 
         // Initialize the calendar with today and the preferred time to run the job.
         Calendar cal1 = Calendar.getInstance();
         cal1.set(Calendar.HOUR_OF_DAY, hourOfTheDay);
         cal1.set(Calendar.MINUTE, minute);
-        cal1.set(Calendar.DAY_OF_MONTH,day);
-        cal1.set(Calendar.MONTH,month);
-        cal1.set(Calendar.YEAR,year);
+        cal1.set(Calendar.SECOND, sec);
 
         // Initialize a calendar with now.
         Calendar cal2 = Calendar.getInstance();
@@ -499,27 +450,10 @@ public class Home extends AppCompatActivity{
             cal2.setTimeInMillis(cal2.getTimeInMillis() + TimeUnit.DAYS.toMillis(periodInDays));
         }
 
-
         long delta = (cal2.getTimeInMillis() - cal1.getTimeInMillis());
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
-        Log.i("cal1","Cal1 = "+dateFormat.format(cal1.getTime()));
-        Log.i("cal2","Cal2 = "+dateFormat.format(cal2.getTime()));
-        //Log.i("delta","(cal2 - cal1 ) Delta = "+dateFormat.format(delta));
-        Log.i("PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS","PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS = "+dateFormat.format(PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS));
-
-        return (delta > PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS) ? delta : PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS;
-        //return cal1.getTimeInMillis();
-    }
-
-    private void addLista(String horario, String mensagem, boolean status) {
-        boolean insert = dbHelper.addHorario(horario,mensagem,status);
-
-        if(insert==true){
-            Toast.makeText(this,"Horario cadastrado com sucesso!",Toast.LENGTH_SHORT).show();
-        }else{
-            Toast.makeText(this,"Desculpe, houve um erro!",Toast.LENGTH_SHORT).show();
-        }
+        return ((delta > PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS) ? delta
+                : PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS);
     }
 
 }

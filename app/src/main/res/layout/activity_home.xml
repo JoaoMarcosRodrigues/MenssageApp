@@ -9,7 +9,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#9A969F" />
+        android:background="#975BE3" />
 
     <ScrollView
         android:id="@+id/scrollview"
@@ -28,6 +28,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
                 android:layout_alignParentRight="true"
+                android:layout_marginRight="15dp"
                 android:layout_marginTop="20dp"
                 android:src="@drawable/ic_adicionar_contato" />
 
@@ -40,7 +41,9 @@
                 android:layout_marginTop="28dp"
                 android:layout_toRightOf="@+id/imageAgendar"
                 android:text="Hora"
-                android:textSize="16sp" />
+                android:fontFamily="casual"
+                android:textStyle="bold"
+                android:textSize="18sp" />
 
             <ImageButton
                 android:id="@+id/imageAgendar"
@@ -49,16 +52,28 @@
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
                 android:layout_marginTop="20dp"
+                android:layout_marginLeft="15dp"
                 android:src="@drawable/ic_hora" />
+
+            <ca.antonious.materialdaypicker.MaterialDayPicker
+                android:id="@+id/day_picker"
+                android:background="@drawable/borda_day_picker"
+                android:layout_width="match_parent"
+                android:padding="2dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="90dp"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_alignParentTop="true"/>
 
             <TextView
                 android:id="@+id/view_lista"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
                 android:layout_alignParentRight="true"
-                android:layout_marginTop="65dp"
+                android:layout_marginTop="30dp"
+                android:layout_below="@+id/day_picker"
                 android:gravity="center"
                 android:text="Contatos"
                 android:textSize="20sp"
@@ -87,24 +102,12 @@
                 android:layout_marginTop="12dp"
                 android:clickable="true" />
 
-            <Button
-                android:id="@+id/btnHistorico"
-                android:layout_width="match_parent"
-                android:gravity="center"
-                android:layout_height="wrap_content"
-                android:text="Histórico de horários"
-                android:textSize="14sp"
-                android:layout_below="@+id/btnLimpar"
-                android:layout_alignParentRight="true"
-                android:layout_marginTop="12dp"
-                android:clickable="true" />
-
 
             <MultiAutoCompleteTextView
                 android:id="@+id/mensagem"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/btnHistorico"
+                android:layout_below="@+id/btnLimpar"
                 android:hint="Digite aqui sua mensagem..."
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="20dp"

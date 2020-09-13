@@ -1,4 +1,4 @@
-package com.example.menssageapp;
+package com.example.menssageapp.workers;
 
 import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityEvent;
@@ -10,7 +10,6 @@ import java.util.List;
 
 public class WhatsAppAccessibilityService extends AccessibilityService {
 
-    @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if(getRootInActiveWindow() == null){
             return;

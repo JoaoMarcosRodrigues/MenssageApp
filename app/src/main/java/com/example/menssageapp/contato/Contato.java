@@ -1,4 +1,4 @@
-package com.example.menssageapp;
+package com.example.menssageapp.contato;
 
 public class Contato {
     String nome;

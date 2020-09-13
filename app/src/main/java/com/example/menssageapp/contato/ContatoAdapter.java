@@ -1,4 +1,4 @@
-package com.example.menssageapp;
+package com.example.menssageapp.contato;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -11,6 +11,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.example.menssageapp.R;
+
 import java.util.ArrayList;
 
 public class ContatoAdapter extends ArrayAdapter<Contato> {
@@ -18,7 +20,7 @@ public class ContatoAdapter extends ArrayAdapter<Contato> {
     private final ArrayList<Contato> elementos;
 
     public ContatoAdapter(Context context, ArrayList<Contato> elementos){
-        super(context,R.layout.linha,elementos);
+        super(context, R.layout.linha,elementos);
         this.context = context;
         this.elementos = elementos;
     }

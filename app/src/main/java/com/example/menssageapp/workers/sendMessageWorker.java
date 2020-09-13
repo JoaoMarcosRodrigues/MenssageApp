@@ -1,4 +1,4 @@
-package com.example.menssageapp;
+package com.example.menssageapp.workers;
 
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +19,6 @@ public class sendMessageWorker extends Worker {
         super(context, workerParams);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @NonNull
     @Override
     public Result doWork() {
@@ -32,18 +31,19 @@ public class sendMessageWorker extends Worker {
                     PackageManager packageManager = Objects.requireNonNull(getApplicationContext()).getPackageManager();
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     try {
-                        String url = "https://api.whatsapp.com/send?phone=" + numbers[j] + "&text=" + URLEncoder.encode(message+"   ", "UTF-8");
+                        String url = "https://api.whatsapp.com/send?phone=" + numbers[j] + "&text=" + URLEncoder.encode(message + "   ", "UTF-8");
                         intent.setPackage("com.whatsapp");
                         intent.setData(Uri.parse(url));
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         if (intent.resolveActivity(packageManager) != null) {
                             getApplicationContext().startActivity(intent);
-                            Thread.sleep(1000);
+                            Thread.sleep(5000);
                         }else{
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        }
+                    }
+
                 }
             }
         } catch (Exception e) {
